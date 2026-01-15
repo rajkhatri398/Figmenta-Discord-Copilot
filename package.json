@@ -1,0 +1,22 @@
+{
+  "name": "figmenta-discord-copilot",
+  "version": "1.0.0",
+  "description": "Discord copilot with admin dashboard",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=admin-web\" \"npm run dev --workspace=bot\"",
+    "dev:web": "npm run dev --workspace=admin-web",
+    "dev:bot": "npm run dev --workspace=bot",
+    "build": "npm run build --workspace=admin-web",
+    "start": "npm start --workspace=admin-web",
+    "start:bot": "npm start --workspace=bot",
+    "lint": "npm run lint --workspace=admin-web"
+  },
+  "workspaces": [
+    "admin-web",
+    "bot"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
