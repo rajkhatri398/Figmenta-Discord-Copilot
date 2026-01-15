@@ -138,25 +138,38 @@ export default function Dashboard() {
       setUploading(true);
       const fileName = `${Date.now()}-${file.name}`;
       
+      console.log("📤 Uploading file:", fileName);
+      
       // Upload to Supabase Storage
       const { error } = await supabase.storage
         .from("knowledge-base")
         .upload(fileName, file);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Storage error:", error);
+        throw new Error(`Storage: ${error.message}`);
+      }
+
+      console.log("✅ File uploaded to storage");
 
       // Store file metadata
-      await supabase.from("knowledge_files").insert([{
+      const { error: insertError } = await supabase.from("knowledge_files").insert([{
         name: file.name,
         storage_path: fileName,
         size: file.size,
       }]);
 
+      if (insertError) {
+        console.error("Database error:", insertError);
+        throw new Error(`Database: ${insertError.message}`);
+      }
+
+      console.log("✅ Metadata saved to database");
       await loadData();
       alert("✓ File uploaded successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading file:", error);
-      alert("❌ Failed to upload file");
+      alert(`❌ Failed to upload file:\n${error.message}`);
     } finally {
       setUploading(false);
     }
