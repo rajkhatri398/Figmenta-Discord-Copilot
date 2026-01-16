@@ -13,6 +13,7 @@ interface KnowledgeFile {
   id: string;
   name: string;
   size: number;
+  content?: string;
   created_at: string;
 }
 
@@ -152,11 +153,38 @@ export default function Dashboard() {
 
       console.log("✅ File uploaded to storage");
 
-      // Store file metadata
+      // Extract text content if it's a PDF
+      let extractedContent = "";
+      if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+        try {
+          console.log("📄 Extracting PDF content...");
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("storagePath", fileName);
+          
+          const response = await fetch("/api/extract-pdf", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            extractedContent = result.content;
+            console.log("✅ PDF content extracted");
+          } else {
+            console.log("⚠️  Could not extract PDF content");
+          }
+        } catch (extractError) {
+          console.log("⚠️  PDF extraction skipped:", extractError);
+        }
+      }
+
+      // Store file metadata with content
       const { error: insertError } = await supabase.from("knowledge_files").insert([{
         name: file.name,
         storage_path: fileName,
         size: file.size,
+        content: extractedContent || null,
       }]);
 
       if (insertError) {

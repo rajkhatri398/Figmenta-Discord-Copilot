@@ -72,10 +72,31 @@ client.on("messageCreate", async msg => {
         console.log("⚠️  No knowledge files table yet");
       } else if (files && files.length > 0) {
         console.log(`📚 Found ${files.length} knowledge files`);
-        ragContext = `\n\nKnowledge Base:\n${files.map(f => `- ${f.name} (${f.size} bytes)`).join("\n")}`;
+        
+        // Try to fetch actual content from storage
+        let fileContents = [];
+        for (const file of files) {
+          try {
+            const { data: fileData, error: downloadError } = await supabase.storage
+              .from("knowledge-base")
+              .download(file.storage_path);
+            
+            if (!downloadError && fileData) {
+              const buffer = await fileData.arrayBuffer();
+              const text = Buffer.from(buffer).toString('utf-8').substring(0, 1000);
+              fileContents.push(`File: ${file.name}\n${text}`);
+              console.log(`✅ Loaded content from ${file.name}`);
+            }
+          } catch (e) {
+            console.log(`⚠️  Could not extract content from ${file.name}`);
+            fileContents.push(`File: ${file.name} (${file.size} bytes)`);
+          }
+        }
+        
+        ragContext = `\n\nKnowledge Base:\n${fileContents.join("\n---\n")}`;
       }
     } catch (e) {
-      console.log("⚠️  RAG system not yet available");
+      console.log("⚠️  RAG system error:", e.message);
     }
 
     const systemPrompt = `${instrData?.content || "You are a helpful Discord bot assistant."}${ragContext}`;
